@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entre Pétalos</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+  body{background:#fffaf8}
+  header{padding:20px;text-align:center;background:white;box-shadow:0 2px 5px #0001;position:sticky;top:0;z-index:10}
+.logo{font-size:28px;font-weight:bold;color:#c77a9c}
+  h1{text-align:center;margin:30px 0 5px;color:#b85c85;font-size:48px;font-family:Georgia}
+.sub{text-align:center;color:#888;margin-bottom:20px}
+.productos{padding:20px 5%;display:grid;grid-template-columns:repeat(5,1fr);gap:18px}
+  @media(max-width:900px){.productos{grid-template-columns:repeat(2,1fr)}}
+.card{background:white;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px #0001;cursor:pointer;transition:0.2s}
+.card:hover{transform:translateY(-4px)}
+.card img{width:100%;height:230px;object-fit:cover;display:block} /* IMAGEN MAS GRANDE */
+.card-body{padding:12px;text-align:center}
+.card-body span{color:#c77a9c;font-weight:bold}
+
+  /* CARRITO SIEMPRE VISIBLE */
+  #carrito-btn{
+    position:fixed;bottom:20px;right:20px;
+    background:#c77a9c;color:white;
+    padding:15px 25px;border-radius:50px;
+    box-shadow:0 5px 15px #0003;
+    cursor:pointer;z-index:100;
+    font-weight:bold;font-size:16px;
+  }
+
+  /* MODAL PRODUCTO */
+  #modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999;justify-content:center;align-items:center}
+  #modal.show{display:flex}
+.modal-box{background:white;width:90%;max-width:600px;border-radius:15px;display:flex;overflow:hidden;position:relative}
+.modal-box img{width:50%;object-fit:cover}
+.modal-text{padding:20px;width:50%}
+.modal-text h2{color:#b85c85}
+.close{position:absolute;top:10px;right:15px;font-size:28px;cursor:pointer}
+.btn{background:#c77a9c;color:white;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;margin-top:10px}
+
+  /* MODAL CARRITO */
+  #modal-carrito{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:flex-end}
+  #modal-carrito.show{display:flex}
+  .carrito-box{background:white;width:350px;height:100%;padding:20px;overflow-y:auto}
+</style>
+</head>
+<body>
+
+<header><div class="logo">Entre Pétalos 🌸</div></header>
+<h1>Entre Pétalos</h1>
+<p class="sub">Haz click en cualquier producto 👇</p>
+
+<div class="productos" id="lista-productos"></div>
+
+<!-- BOTON CARRITO SIEMPRE VISIBLE -->
+<div id="carrito-btn" onclick="abrirCarrito()">
+  🛒 Carrito (<span id="contador">0</span>)
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div id="modal">
+  <div class="modal-box">
+    <span class="close" onclick="cerrar()">×</span>
+    <img id="m-img" src="">
+    <div class="modal-text">
+      <h2 id="m-titulo"></h2>
+      <p id="m-precio" style="color:#c77a9c;font-weight:bold;font-size:20px;margin:10px 0"></p>
+      <p id="m-desc" style="font-size:14px;color:#555"></p>
+      <p style="margin-top:10px;font-weight:bold">Beneficios:</p>
+      <p id="m-ben" style="font-size:13px;color:#666"></p>
+      <button class="btn" id="btn-agregar">Agregar al carrito</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARRITO -->
+<div id="modal-carrito" onclick="cerrarCarrito(event)">
+  <div class="carrito-box">
+    <h2 style="color:#b85c85">Tu Carrito 🌸</h2>
+    <div id="lista-carrito" style="margin-top:20px"></div>
+    <p id="total" style="margin-top:20px;font-weight:bold"></p>
+    <button class="btn" style="width:100%;margin-top:15px" onclick="vaciarCarrito()">Vaciar carrito</button>
+    <button class="btn" style="width:100%;margin-top:10px;background:#333" onclick="cerrarCarritoDirecto()">Seguir comprando</button>
+  </div>
+</div>
+
+<script>
+const data = [
+  {t:"Serum Vitamina C 20%", p:"$85.000", d:"Ilumina, quita manchas y da glow instantáneo.", b:"Antioxidante, unifica tono", img:"petalos.jpeg"},
+  {t:"Limpiador Suave de Avena", p:"$45.000", d:"Limpia sin resecar. Para piel sensible.", b:"Sin sulfatos, calma", img:"limpiador.jpeg"},
+  {t:"Protector Solar SPF 50+", p:"$62.000", d:"Protección invisible que no deja cara blanca.", b:"Ligero, no graso", img:"protector.jpeg"},
+  {t:"Crema Hidratante Nocturna", p:"$78.000", d:"Repara tu piel mientras duermes.", b:"Cierra poros, hidrata profundo", img:"crema.jpeg"},
+  {t:"Contorno de Ojos Cafeína", p:"$59.000", d:"Roll-on frío para ojeras y bolsas.", b:"Desinflama, ilumina", img:"contorno.jpeg"},
+  {t:"Tónico de Rosas", p:"$38.000", d:"Equilibra el pH y deja la piel lista.", b:"Cierra poros, refresca", img:"tonico.jpeg"},
+  {t:"Exfoliante BHA 2%", p:"$67.000", d:"Quita puntos negros sin frotar.", b:"Anti-acné, suaviza textura", img:"exfoliante.jpeg"},
+  {t:"Mascarilla Arcilla Verde", p:"$42.000", d:"Controla grasa y deja efecto mate.", b:"Detox, purifica", img:"mascarilla.jpeg"},
+  {t:"Aceite Rosa Mosqueta", p:"$55.000", d:"100% puro para cicatrices y estrías.", b:"Cicatrizante, nutre", img:"aceite.jpeg"},
+  {t:"Bálsamo Labial con SPF", p:"$18.000", d:"Hidrata y protege del sol.", b:"Repara grietas", img:"balsamo.jpeg"},
+];
+
+let carrito = [];
+const lista = document.getElementById('lista-productos');
+data.forEach((prod, i) => {
+  lista.innerHTML += `
+    <div class="card" onclick="abrir(${i})">
+      <img src="${prod.img}" alt="${prod.t}">
+      <div class="card-body">
+        <h4>${prod.t}</h4>
+        <span>${prod.p}</span>
+      </div>
+    </div>
+  `;
+});
+
+let actual = 0;
+function abrir(i){
+  actual = i;
+  document.getElementById('m-img').src = data[i].img;
+  document.getElementById('m-titulo').innerText = data[i].t;
+  document.getElementById('m-precio').innerText = data[i].p;
+  document.getElementById('m-desc').innerText = data[i].d;
+  document.getElementById('m-ben').innerText = data[i].b;
+  document.getElementById('modal').classList.add('show');
+}
+function cerrar(){ document.getElementById('modal').classList.remove('show'); }
+
+document.getElementById('btn-agregar').onclick = function(){
+  carrito.push(data[actual]);
+  document.getElementById('contador').innerText = carrito.length;
+  cerrar();
+  abrirCarrito();
+};
+
+function abrirCarrito(){
+  document.getElementById('modal-carrito').classList.add('show');
+  let html = "";
+  if(carrito.length === 0) html = "<p>Tu carrito está vacío 🌸</p>";
+  else {
+    carrito.forEach((item, idx) => {
+      html += `<p style="border-bottom:1px solid #eee;padding:8px 0"> ${idx+1}. ${item.t} - ${item.p}</p>`;
+    });
+  }
+  document.getElementById('lista-carrito').innerHTML = html;
+  document.getElementById('total').innerText = "Total productos: " + carrito.length;
+}
+function cerrarCarrito(e){ if(e.target.id === 'modal-carrito') cerrarCarritoDirecto(); }
+function cerrarCarritoDirecto(){ document.getElementById('modal-carrito').classList.remove('show'); }
+function vaciarCarrito(){ carrito = []; document.getElementById('contador').innerText = 0; abrirCarrito(); }
+
+document.getElementById('modal').addEventListener('click', function(e){
+  if(e.target.id === 'modal') cerrar();
+});
+</script>
+</body>
+</html>
